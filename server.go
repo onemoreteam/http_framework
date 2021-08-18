@@ -64,7 +64,11 @@ func (srv *Server) Serve(l net.Listener) error {
 	})
 
 	if len(srv.grpcServices) > 0 {
-		grpcS := grpc.NewServer(srv.GrpcServerOptions...)
+		grpcS := grpc.NewServer(
+			append(srv.GrpcServerOptions,
+				grpc.ChainUnaryInterceptor(interceptServiceUnary),
+				grpc.ChainStreamInterceptor(interceptServiceStream),
+			)...)
 		grpc_health_v1.RegisterHealthServer(grpcS, health.NewServer())
 		for _, e := range srv.grpcServices {
 			grpcS.RegisterService(e.desc, e.impl)
