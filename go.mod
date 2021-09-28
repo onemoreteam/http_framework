@@ -1,4 +1,4 @@
-module github.com/onemoreteam/http_framework
+module github.com/onemoreteam/httpframework
 
 go 1.16
 
