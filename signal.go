@@ -1,4 +1,4 @@
-package http_server_framework
+package http_framework
 
 import (
 	"os"
