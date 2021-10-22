@@ -9,7 +9,7 @@ import (
 	"github.com/ghodss/yaml"
 )
 
-func FromFile(fp string, cfg interface{}) (err error) {
+func BytesFromFile(fp string) (_ []byte, err error) {
 	tpl, err := pongo2.FromFile(fp)
 	if err != nil {
 		return
@@ -25,7 +25,15 @@ func FromFile(fp string, cfg interface{}) (err error) {
 			return
 		}
 	default:
-		return fmt.Errorf("unknown config file extension: %v", ext)
+		return nil, fmt.Errorf("unknown config file extension: %v", ext)
+	}
+	return b, nil
+}
+
+func FromFile(fp string, cfg interface{}) (err error) {
+	b, err := BytesFromFile(fp)
+	if err != nil {
+		return
 	}
 	return FromJson(b, cfg)
 }
