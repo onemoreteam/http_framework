@@ -10,8 +10,9 @@ import (
 )
 
 type registry struct {
-	mu      sync.Mutex // protect registry
-	modules []Module
+	mu          sync.Mutex // protect registry
+	modules     []Module
+	initialized bool
 }
 
 func newRegistry() *registry {
@@ -19,6 +20,9 @@ func newRegistry() *registry {
 }
 
 func (r *registry) Register(m Module) (err error) {
+	if r.initialized {
+		return fmt.Errorf("registration was closed")
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	i := sort.Search(len(r.modules), func(i int) bool {
@@ -33,7 +37,47 @@ func (r *registry) Register(m Module) (err error) {
 	return
 }
 
+func (r *registry) Deregister(names ...string) error {
+	if r.initialized {
+		return fmt.Errorf("registration was closed")
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, name := range names {
+		if i := sort.Search(len(r.modules), func(i int) bool {
+			return r.modules[i].Name() >= name
+		}); i < len(r.modules) && r.modules[i].Name() == name {
+			r.modules = append(r.modules[:i], r.modules[i+1:]...)
+		} else {
+			return fmt.Errorf("unregistered module %s", name)
+		}
+	}
+	return nil
+}
+
+func (r *registry) DeregisterAllExcept(names ...string) error {
+	if r.initialized {
+		return fmt.Errorf("registration was closed")
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	modules := make([]Module, 0)
+	for _, name := range names {
+		if i := sort.Search(len(r.modules), func(i int) bool {
+			return r.modules[i].Name() >= name
+		}); i < len(r.modules) && r.modules[i].Name() == name {
+			modules = append(modules, r.modules[i])
+		} else {
+			return fmt.Errorf("unregistered module %s", name)
+		}
+	}
+	r.modules = modules
+	return nil
+}
+
 func (r *registry) Initialize(j json.RawMessage) (err error) {
+	r.initialized = true
+
 	var jm map[string]json.RawMessage
 	if err = json.Unmarshal(j, &jm); err != nil {
 		return

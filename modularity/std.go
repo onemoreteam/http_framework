@@ -11,6 +11,12 @@ func Register(module Module) {
 		panic(err)
 	}
 }
+func Deregister(names ...string) error {
+	return stdRegistry.Deregister(names...)
+}
+func DeregisterAllExcept(names ...string) error {
+	return stdRegistry.DeregisterAllExcept(names...)
+}
 
 func Initialize(jb json.RawMessage) (err error) {
 	return stdRegistry.Initialize(jb)
