@@ -20,13 +20,10 @@ func (m Skeleton) Shutdown() {}
 
 func (m Skeleton) Finalize() {}
 
-////////////////////////////////////////////////////////////////////////////////
+/// make sure Skeleton implements Module except Name method
 
-var _ Module = (*skeletonModule)(nil)
+var _ Module = (*__skeleton__)(nil)
 
-type skeletonModule struct {
-	Skeleton
-}
+type __skeleton__ struct{ Skeleton }
 
-func (skeletonModule) Name() string  { return "" }
-func (skeletonModule) Priority() int { return 0 }
+func (__skeleton__) Name() string { return "" }
