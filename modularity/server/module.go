@@ -38,11 +38,11 @@ func (m *serverModule) Finalize() {
 }
 
 func (m *serverModule) Serve() (err error) {
-	return Default.Serve(m.lis)
+	return Std.Serve(m.lis)
 }
 
 func (m *serverModule) Shutdown() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	Default.Shutdown(ctx)
+	Std.Shutdown(ctx)
 }
