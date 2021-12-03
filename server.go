@@ -16,6 +16,12 @@ import (
 
 type GatewayRegisterFunc func(context.Context, *runtime.ServeMux, *grpc.ClientConn) error
 
+type GatewayRequestMatcherFunc func(r *http.Request) bool
+
+func gatewayRequestContentTypeMatcher(r *http.Request) bool {
+	return r.Header.Get("Content-Type") == "application/grpc-gateway"
+}
+
 type grpcService struct {
 	desc *grpc.ServiceDesc
 	impl interface{}
@@ -29,7 +35,10 @@ type Server struct {
 	httpS *http.Server
 
 	// options from grpc.Server
-	GrpcServerOptions []grpc.ServerOption
+	grpcServerOptions []grpc.ServerOption
+
+	// match grpc gateway requests
+	gatewayRequestMatchers []GatewayRequestMatcherFunc
 
 	grpcServices []*grpcService
 	gateServices []*gatewayService
@@ -43,6 +52,20 @@ func NewServer(httpS *http.Server) *Server {
 	srv := &Server{httpS: httpS}
 	srv.ctx, srv.quit = context.WithCancel(context.Background())
 	return srv
+}
+
+func (srv *Server) AddGrpcServerOption(opts ...grpc.ServerOption) {
+	srv.grpcServerOptions = append(srv.grpcServerOptions, opts...)
+}
+func (srv *Server) SetGrpcServerOption(opts ...grpc.ServerOption) {
+	srv.grpcServerOptions = opts
+}
+
+func (srv *Server) AddGatewayRequestMatcher(matchers ...GatewayRequestMatcherFunc) {
+	srv.gatewayRequestMatchers = append(srv.gatewayRequestMatchers, matchers...)
+}
+func (srv *Server) SetGatewayRequestMatcher(matchers ...GatewayRequestMatcherFunc) {
+	srv.gatewayRequestMatchers = matchers
 }
 
 func (srv *Server) ListenAndServe() error {
@@ -67,7 +90,7 @@ func (srv *Server) Serve(l net.Listener) error {
 
 	if len(srv.grpcServices) > 0 {
 		grpcS := grpc.NewServer(
-			append(srv.GrpcServerOptions,
+			append(srv.grpcServerOptions,
 				grpc.ChainUnaryInterceptor(interceptServiceUnary),
 				grpc.ChainStreamInterceptor(interceptServiceStream),
 			)...)
@@ -103,13 +126,25 @@ func (srv *Server) Serve(l net.Listener) error {
 				srv.httpS.Handler = gateM
 			} else {
 				httpM := srv.httpS.Handler
-				srv.httpS.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					if r.Header.Get("Content-Type") == "application/grpc-gateway" {
-						gateM.ServeHTTP(w, r)
-					} else {
+
+				gatewayRequestMatchers := append(
+					[]GatewayRequestMatcherFunc{},
+					srv.gatewayRequestMatchers...)
+
+				srv.httpS.Handler = http.HandlerFunc(
+					func(w http.ResponseWriter, r *http.Request) {
+						if gatewayRequestContentTypeMatcher(r) {
+							gateM.ServeHTTP(w, r)
+							return
+						}
+						for _, f := range gatewayRequestMatchers {
+							if f(r) {
+								gateM.ServeHTTP(w, r)
+								return
+							}
+						}
 						httpM.ServeHTTP(w, r)
-					}
-				})
+					})
 			}
 		}
 	}
