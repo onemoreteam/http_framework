@@ -7,12 +7,24 @@ import (
 	"google.golang.org/grpc"
 )
 
-var Std = httpframework.NewServer(&http.Server{})
+var stdServeMux = http.NewServeMux()
+
+var stdServer = httpframework.NewServer(&http.Server{
+	Handler: stdServeMux,
+})
+
+func Handle(pattern string, handler http.Handler) {
+	stdServeMux.Handle(pattern, handler)
+}
+
+func HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) {
+	stdServeMux.HandleFunc(pattern, handler)
+}
 
 func RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
-	Std.RegisterService(desc, impl)
+	stdServer.RegisterService(desc, impl)
 }
 
 func RegisterGatewayService(f httpframework.GatewayRegisterFunc) {
-	Std.RegisterGatewayService(f)
+	stdServer.RegisterGatewayService(f)
 }

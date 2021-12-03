@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/ntons/log-go"
 	"github.com/soheilhy/cmux"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -60,6 +61,7 @@ func (srv *Server) ListenAndServe() error {
 func (srv *Server) Serve(l net.Listener) error {
 	m := cmux.New(l)
 	m.HandleError(func(err error) bool {
+		log.Warnf("cmux handle error: %v", err)
 		return true
 	})
 
