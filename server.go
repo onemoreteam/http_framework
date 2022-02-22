@@ -12,6 +12,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
+
+	// register compressors
+	_ "github.com/ntons/grpc-compressor/lz4"
+	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 type GatewayRegisterFunc func(context.Context, *runtime.ServeMux, *grpc.ClientConn) error
