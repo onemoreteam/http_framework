@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/flosch/pongo2"
+	"github.com/flosch/pongo2/v4"
 )
 
 func init() {
