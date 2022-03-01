@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/flosch/pongo2"
-	"github.com/ghodss/yaml"
+	"github.com/onemoreteam/yaml"
 )
 
 func BytesFromFile(fp string) (_ []byte, err error) {
