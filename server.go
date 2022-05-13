@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"reflect"
 	"sync"
-	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/ntons/log-go"
@@ -176,11 +175,15 @@ func (s *Server) Serve(l net.Listener) error {
 		grpcS.RegisterService(x.ServiceDesc, x.ServiceImpl)
 	}
 
+	// https://github.com/soheilhy/cmux#limitations
+	// Java gRPC Clients: Java gRPC client blocks until it receives a SETTINGS frame from the server.
+	// If you are using the Java client to connect to a cmux'ed gRPC server please match with writers:
+	grpcL := s.mux.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
 	wg.Add(1)
 	go func(l net.Listener) {
 		defer wg.Done()
 		grpcS.Serve(l)
-	}(s.mux.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc")))
+	}(grpcL)
 	defer grpcS.GracefulStop()
 
 	// serve http
@@ -189,11 +192,7 @@ func (s *Server) Serve(l net.Listener) error {
 		defer wg.Done()
 		s.httpS.Serve(l)
 	}(s.mux.Match(cmux.HTTP1Fast()))
-	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		s.httpS.Shutdown(ctx)
-	}()
+	defer s.httpS.Shutdown(context.Background())
 
 	s.mux.Serve()
 	return nil
