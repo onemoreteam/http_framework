@@ -7,36 +7,33 @@ import (
 	"google.golang.org/grpc"
 )
 
-var stdServeMux = http.NewServeMux()
+var (
+	stdServeMux          *http.ServeMux = nil
+	stdGrpcServerOptions []grpc.ServerOption
+	stdGrpcServices      []httpframework.GrpcService
+)
 
-var stdServer = httpframework.NewServer(&http.Server{
-	Handler: stdServeMux,
-})
-
-func AddGrpcServerOption(opts ...grpc.ServerOption) {
-	stdServer.AddGrpcServerOption(opts...)
-}
-func SetGrpcServerOption(opts ...grpc.ServerOption) {
-	stdServer.SetGrpcServerOption(opts...)
-}
-
-func AddGatewayRequestMatcher(matchers ...httpframework.GatewayRequestMatcherFunc) {
-	stdServer.AddGatewayRequestMatcher(matchers...)
-}
-func SetGatewayRequestMatcher(matchers ...httpframework.GatewayRequestMatcherFunc) {
-	stdServer.SetGatewayRequestMatcher(matchers...)
+func WithGrpcServerOption(opts ...grpc.ServerOption) {
+	stdGrpcServerOptions = opts
 }
 
 func Handle(pattern string, handler http.Handler) {
+	if stdServeMux == nil {
+		stdServeMux = http.NewServeMux()
+	}
 	stdServeMux.Handle(pattern, handler)
 }
 func HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) {
+	if stdServeMux == nil {
+		stdServeMux = http.NewServeMux()
+	}
 	stdServeMux.HandleFunc(pattern, handler)
 }
 
-func RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
-	stdServer.RegisterService(desc, impl)
+func RegisterGrpcService(
+	desc *grpc.ServiceDesc, impl interface{}) {
+	stdGrpcServices = append(stdGrpcServices, httpframework.Service(desc, impl))
 }
-func RegisterGatewayService(f httpframework.GatewayRegisterFunc) {
-	stdServer.RegisterGatewayService(f)
+func RegisterGrpcServiceWithGateway(desc *grpc.ServiceDesc, impl interface{}, register httpframework.GrpcGatewayRegisterFunc, matchers ...httpframework.Matcher) {
+	stdGrpcServices = append(stdGrpcServices, httpframework.ServiceWithGateway(desc, impl, register, matchers...))
 }

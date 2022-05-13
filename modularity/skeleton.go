@@ -7,8 +7,7 @@ import (
 
 var notImplementedError = errors.New("not implemented")
 
-type Skeleton struct {
-}
+type Skeleton struct{}
 
 func (Skeleton) Priority() int { return 0 }
 

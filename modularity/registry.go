@@ -112,14 +112,14 @@ func (r *registry) Serve() {
 			defer wg.Done()
 			if err := m.Serve(); err != nil {
 				if err != notImplementedError {
-					log.Infof("module %s exited with error %w", m.Name(), err)
+					log.Infof("module %s exited with error: %v", m.Name(), err)
+					r.Shutdown() // 异常退出的模块将引起服务结束
 				}
 			} else {
 				log.Infof("module %s exited gracefully", m.Name())
 			}
 		}(m)
 	}
-	wg.Wait()
 	return
 }
 
