@@ -9,5 +9,6 @@ require (
 	github.com/ntons/log-go v0.1.0
 	github.com/onemoreteam/yaml v1.0.2
 	github.com/soheilhy/cmux v0.1.5
+	golang.org/x/net v0.7.0 // indirect
 	google.golang.org/grpc v1.44.0
 )
