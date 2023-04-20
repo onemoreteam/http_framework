@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -15,6 +16,10 @@ func init() {
 		{
 			names:  []string{"env"},
 			filter: filterEnv,
+		},
+		{
+			names:  []string{"quote"},
+			filter: filterQuote,
 		},
 	} {
 		for _, name := range e.names {
@@ -40,4 +45,11 @@ func filterEnv(
 	} else {
 		return in, nil
 	}
+}
+
+// quote a expression
+// eg: {{ xxx|quote }}
+func filterQuote(
+	in *pongo2.Value, param *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
+	return pongo2.AsSafeValue(fmt.Sprintf("\"%s\"", in.String())), nil
 }
