@@ -143,6 +143,7 @@ func (s *Server) Serve(l net.Listener) error {
 		for _, x := range s.grpcServices {
 			if x.GatewayRegister != nil {
 				x.GatewayRegister(context.TODO(), grpcGatewayH, grpcC)
+				log.Infof("register grpc gateway service: %s", x.ServiceDesc.ServiceName)
 			}
 		}
 
@@ -174,6 +175,7 @@ func (s *Server) Serve(l net.Listener) error {
 	grpc_health_v1.RegisterHealthServer(grpcS, health.NewServer())
 	for _, x := range s.grpcServices {
 		grpcS.RegisterService(x.ServiceDesc, x.ServiceImpl)
+		log.Infof("register grpc service: %s", x.ServiceDesc.ServiceName)
 	}
 
 	// https://github.com/soheilhy/cmux#limitations
