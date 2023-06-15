@@ -122,6 +122,7 @@ func (s *Server) Serve(l net.Listener) error {
 		for _, x := range s.grpcServices {
 			if x.GatewayRegister != nil {
 				_grpcS.RegisterService(x.ServiceDesc, x.ServiceImpl)
+				log.Infof("register grpc service: %s", x.ServiceDesc.ServiceName)
 			}
 		}
 
